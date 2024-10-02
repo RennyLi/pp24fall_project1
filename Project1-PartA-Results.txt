@@ -1,0 +1,142 @@
+Current directory: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts
+Sequential PartA (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 643 milliseconds
+
+SIMD(AVX2) PartA (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 423 milliseconds
+
+MPI PartA (Optimized with -O2)
+Number of processes: 1
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 652 milliseconds
+
+Number of processes: 2
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 785 milliseconds
+
+Number of processes: 4
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 499 milliseconds
+
+Number of processes: 8
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 380 milliseconds
+
+Number of processes: 16
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 270 milliseconds
+
+Number of processes: 32
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 312 milliseconds
+
+Pthread PartA (Optimized with -O2)
+Number of cores: 1
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 716 milliseconds
+
+Number of cores: 2
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 644 milliseconds
+
+Number of cores: 4
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 342 milliseconds
+
+Number of cores: 8
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 179 milliseconds
+
+Number of cores: 16
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 101 milliseconds
+
+Number of cores: 32
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 70 milliseconds
+
+OpenMP PartA (Optimized with -O2)
+Number of cores: 1
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 591 milliseconds
+
+Number of cores: 2
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 591 milliseconds
+
+Number of cores: 4
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 452 milliseconds
+
+Number of cores: 8
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 283 milliseconds
+
+Number of cores: 16
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 179 milliseconds
+
+Number of cores: 32
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 146 milliseconds
+
+CUDA PartA
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+GPU Execution Time: 35.3292 milliseconds
+
+OpenACC PartA
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 36 milliseconds
+
+Triton PartA
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/20K-Gray.jpg
+Transformation Complete!
+Execution Time: 2.66 milliseconds
+

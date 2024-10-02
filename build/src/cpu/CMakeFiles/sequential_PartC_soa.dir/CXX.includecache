@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/cpu/sequential_PartC_soa.cpp
+memory.h
+-
+chrono
+-
+cmath
+-
+iostream
+-
+../utils.hpp
+/nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/utils.hpp
+
+/nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/utils.cpp
+utils.hpp
+/nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/utils.hpp
+
+/nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/utils.hpp
+cstdio
+-
+cstdlib
+-
+cmath
+-
+iostream
+-
+jpeglib.h
+-
+

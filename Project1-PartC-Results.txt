@@ -1,0 +1,18 @@
+Current directory: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts
+Sequential PartC Array-of-Structure (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
+Transformation Complete!
+Execution Time: 3738 milliseconds
+
+Sequential PartC Structure-of-Array (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
+Transformation Complete!
+Execution Time: 3647 milliseconds
+
+SIMD(AVX2) PartC (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Transformation Complete!
+Execution Time: 0 milliseconds
+

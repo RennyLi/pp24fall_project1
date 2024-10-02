@@ -1,0 +1,1 @@
+/opt/rh/devtoolset-7/root/usr/bin/c++     CMakeFiles/sequential_PartC_soa.dir/sequential_PartC_soa.cpp.o CMakeFiles/sequential_PartC_soa.dir/__/utils.cpp.o  -o sequential_PartC_soa -ljpeg 

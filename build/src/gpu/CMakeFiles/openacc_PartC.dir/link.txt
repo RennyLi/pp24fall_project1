@@ -1,0 +1,1 @@
+pgc++   -acc -ta=tesla:nofma   CMakeFiles/openacc_PartC.dir/openacc_PartC.cpp.o CMakeFiles/openacc_PartC.dir/__/utils.cpp.o  -o openacc_PartC -ljpeg 
