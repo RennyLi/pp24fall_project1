@@ -3,16 +3,17 @@ Sequential PartC Array-of-Structure (Optimized with -O2)
 Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
 Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
 Transformation Complete!
-Execution Time: 3738 milliseconds
+Execution Time: 3744 milliseconds
 
 Sequential PartC Structure-of-Array (Optimized with -O2)
 Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
 Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
 Transformation Complete!
-Execution Time: 3647 milliseconds
+Execution Time: 3650 milliseconds
 
 SIMD(AVX2) PartC (Optimized with -O2)
 Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral.jpg
 Transformation Complete!
-Execution Time: 0 milliseconds
+Execution Time: 29404 milliseconds
 

@@ -656,9 +656,9 @@ FIND_PACKAGE_MESSAGE_DETAILS_MPI_CXX:INTERNAL=[/usr/lib64/mpich-3.2/lib/libmpicx
 //Details about finding OpenACC_CXX
 FIND_PACKAGE_MESSAGE_DETAILS_OpenACC_CXX:INTERNAL=[-fopenacc][v2.0()]
 //Details about finding OpenMP
-FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][c ][v4.5()]
+FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][c ][v()]
 //Details about finding OpenMP_CXX
-FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-fopenmp][/opt/rh/devtoolset-7/root/usr/lib/gcc/x86_64-redhat-linux/7/libgomp.so][/lib64/libpthread.so][v4.5()]
+FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-fopenmp][/opt/rh/devtoolset-7/root/usr/lib/gcc/x86_64-redhat-linux/7/libgomp.so][/lib64/libpthread.so][v()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: MPIEXEC_EXECUTABLE
