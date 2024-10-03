@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH -o ./Project1-PartC-Results.txt
-#SBATCH -e ./Project1-PartC-Errors.txt      # 标准错误输出
 #SBATCH -p Project
 #SBATCH -J Project1-PartC
 #SBATCH --nodes=1
@@ -29,17 +28,17 @@ echo ""
 
 # SIMD PartC
 echo "SIMD(AVX2) PartC (Optimized with -O2)"
-srun -n 1 --cpus-per-task 1 ${CURRENT_DIR}/../../build/src/cpu/simd_PartC ${CURRENT_DIR}/../../images/4K-RGB.jpg ${CURRENT_DIR}/../../output/4K-Bilateral.jpg
+srun -n 1 --cpus-per-task 1 ${CURRENT_DIR}/../../build/src/cpu/simd_PartC ${CURRENT_DIR}/../../images/4K-RGB.jpg ${CURRENT_DIR}/../../output/4K-Bilateral-simd.jpg
 echo ""
 
 # MPI PartC
-# echo "MPI PartC (Optimized with -O2)"
-# for num_processes in 1 2 4 8 16 32
-# do
-#   echo "Number of processes: $num_processes"
-#   srun -n $num_processes --cpus-per-task 1 --mpi=pmi2 ${CURRENT_DIR}/../../build/src/cpu/mpi_PartC ${CURRENT_DIR}/../../images/4K-RGB.jpg ${CURRENT_DIR}/../../images/4K-Bilateral.jpg
-#   echo ""
-# done
+echo "MPI PartC (Optimized with -O2)"
+for num_processes in 1 2 4 8 16 32
+do
+  echo "Number of processes: $num_processes"
+  srun -n $num_processes --cpus-per-task 1 --mpi=pmi2 ${CURRENT_DIR}/../../build/src/cpu/mpi_PartC ${CURRENT_DIR}/../../images/4K-RGB.jpg ${CURRENT_DIR}/../../output/4K-Bilateral-mpi.jpg
+  echo ""
+done
 
 # Pthread PartC
 # echo "Pthread PartC (Optimized with -O2)"

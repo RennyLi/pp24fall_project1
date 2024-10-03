@@ -1,8 +1,7 @@
 #include <immintrin.h>
-#include <memory.h>
 #include <chrono>
 #include <iostream>
-
+#include <cstring>
 #include "../utils.hpp"
 
 // Helper function to clamp pixel values between 0 and 255
@@ -12,29 +11,29 @@ inline unsigned char clamp_pixel_value(float value) {
     return static_cast<unsigned char>(value);
 }
 
+// SIMD optimized exp function
 __m256 _mm256_exp_ps(__m256 invec) {
-  float *element = (float *)&invec;
-  return _mm256_setr_ps(
-    expf(element[0]),
-    expf(element[1]),
-    expf(element[2]),
-    expf(element[3]),
-    expf(element[4]),
-    expf(element[5]),
-    expf(element[6]),
-    expf(element[7])
+    float *element = (float *)&invec;
+    return _mm256_setr_ps(
+        expf(element[0]),
+        expf(element[1]),
+        expf(element[2]),
+        expf(element[3]),
+        expf(element[4]),
+        expf(element[5]),
+        expf(element[6]),
+        expf(element[7])
     );
 }
 
 int main(int argc, char** argv) {
     // Verify input argument format
     if (argc != 3) {
-        std::cerr << "Invalid argument, should be: ./executable "
-                     "/path/to/input/jpeg /path/to/output/jpeg\n";
+        std::cerr << "Invalid argument, should be: ./executable /path/to/input/jpeg /path/to/output/jpeg\n";
         return -1;
     }
 
-    // Read JPEG File
+    // Read JPEG File using utils.cpp
     const char* input_filepath = argv[1];
     std::cout << "Input file from: " << input_filepath << "\n";
     auto input_jpeg = read_from_jpeg(input_filepath);
@@ -43,13 +42,9 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-
     // Filtered image buffer
-    auto filteredImage =
-        new unsigned char[input_jpeg.width * input_jpeg.height *
-                          input_jpeg.num_channels];
-    memset(filteredImage, 0,
-           input_jpeg.width * input_jpeg.height * input_jpeg.num_channels);
+    auto filteredImage = new unsigned char[input_jpeg.width * input_jpeg.height * input_jpeg.num_channels];
+    memset(filteredImage, 0, input_jpeg.width * input_jpeg.height * input_jpeg.num_channels);
 
     // Constants for bilateral filter
     float sigma_s = 15.0f; // Spatial kernel standard deviation
@@ -59,7 +54,7 @@ int main(int argc, char** argv) {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Perform bilateral filtering
+    // Perform SIMD-optimized bilateral filtering
     for (int y = 1; y < input_jpeg.height - 1; y++) {
         for (int x = 1; x < input_jpeg.width - 1; x++) {
             int r_id = (y * input_jpeg.width + x) * input_jpeg.num_channels;
@@ -69,6 +64,15 @@ int main(int argc, char** argv) {
             float r_sum = 0, g_sum = 0, b_sum = 0;
             float norm_factor = 0;
 
+            // Precompute spatial weights for 3x3 kernel using SIMD
+            __m256 spatial_weights[3][3];
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    __m256 spatial_dist = _mm256_set1_ps(kx * kx + ky * ky);
+                    spatial_weights[ky + 1][kx + 1] = _mm256_exp_ps(_mm256_mul_ps(spatial_dist, _mm256_set1_ps(-inv_sigma_s)));
+                }
+            }
+
             // Iterate over the 3x3 kernel
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
@@ -76,11 +80,7 @@ int main(int argc, char** argv) {
                     int neighbor_y = y + ky;
                     int neighbor_r_id = (neighbor_y * input_jpeg.width + neighbor_x) * input_jpeg.num_channels;
 
-                    // Compute spatial weight (based on distance)
-                    __m256 spatial_dist = _mm256_set1_ps(kx * kx + ky * ky);
-                    __m256 spatial_weight = _mm256_exp_ps(_mm256_mul_ps(spatial_dist, _mm256_set1_ps(-inv_sigma_s)));
-
-                    // Compute range weight (based on pixel value difference)
+                    // Compute range weights for each channel using SIMD
                     __m256 range_dist_r = _mm256_set1_ps(input_jpeg.buffer[r_id] - input_jpeg.buffer[neighbor_r_id]);
                     __m256 range_weight_r = _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(range_dist_r, range_dist_r), _mm256_set1_ps(-inv_sigma_r)));
 
@@ -91,9 +91,9 @@ int main(int argc, char** argv) {
                     __m256 range_weight_b = _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(range_dist_b, range_dist_b), _mm256_set1_ps(-inv_sigma_r)));
 
                     // Multiply spatial and range weights
-                    __m256 weight_r = _mm256_mul_ps(spatial_weight, range_weight_r);
-                    __m256 weight_g = _mm256_mul_ps(spatial_weight, range_weight_g);
-                    __m256 weight_b = _mm256_mul_ps(spatial_weight, range_weight_b);
+                    __m256 weight_r = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_r);
+                    __m256 weight_g = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_g);
+                    __m256 weight_b = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_b);
 
                     // Sum weighted pixel values
                     r_sum += input_jpeg.buffer[neighbor_r_id] * weight_r[0];
@@ -113,14 +113,12 @@ int main(int argc, char** argv) {
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        end_time - start_time);
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    // Save output JPEG image
+    // Save output JPEG image using utils.cpp
     const char* output_filepath = argv[2];
     std::cout << "Output file to: " << output_filepath << "\n";
-    JPEGMeta output_jpeg{filteredImage, input_jpeg.width, input_jpeg.height,
-                         input_jpeg.num_channels, input_jpeg.color_space};
+    JPEGMeta output_jpeg{filteredImage, input_jpeg.width, input_jpeg.height, input_jpeg.num_channels, input_jpeg.color_space};
     if (export_jpeg(output_jpeg, output_filepath)) {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
@@ -130,7 +128,6 @@ int main(int argc, char** argv) {
     delete[] input_jpeg.buffer;
     delete[] filteredImage;
     std::cout << "Transformation Complete!" << std::endl;
-    std::cout << "Execution Time: " << elapsed_time.count()
-              << " milliseconds\n";
+    std::cout << "Execution Time: " << elapsed_time.count() << " milliseconds\n";
     return 0;
 }
