@@ -2,32 +2,25 @@
 #include <chrono>
 #include <iostream>
 #include <cstring>
+#include <cmath>
 #include "../utils.hpp"
 
 // Helper function to clamp pixel values between 0 and 255
 inline unsigned char clamp_pixel_value(float value) {
-    if (value < 0) return 0;
-    if (value > 255) return 255;
-    return static_cast<unsigned char>(value);
+    return static_cast<unsigned char>(std::max(0.0f, std::min(255.0f, value)));
 }
 
 // SIMD optimized exp function
 __m256 _mm256_exp_ps(__m256 invec) {
-    float *element = (float *)&invec;
-    return _mm256_setr_ps(
-        expf(element[0]),
-        expf(element[1]),
-        expf(element[2]),
-        expf(element[3]),
-        expf(element[4]),
-        expf(element[5]),
-        expf(element[6]),
-        expf(element[7])
-    );
+    alignas(32) float element[8];
+    _mm256_store_ps(element, invec);
+    for (int i = 0; i < 8; ++i) {
+        element[i] = expf(element[i]);
+    }
+    return _mm256_load_ps(element);
 }
 
 int main(int argc, char** argv) {
-    // Verify input argument format
     if (argc != 3) {
         std::cerr << "Invalid argument, should be: ./executable /path/to/input/jpeg /path/to/output/jpeg\n";
         return -1;
@@ -62,7 +55,7 @@ int main(int argc, char** argv) {
             int b_id = r_id + 2;
 
             float r_sum = 0, g_sum = 0, b_sum = 0;
-            float norm_factor = 0;
+            float norm_factor_r = 0, norm_factor_g = 0, norm_factor_b = 0;
 
             // Precompute spatial weights for 3x3 kernel using SIMD
             __m256 spatial_weights[3][3];
@@ -81,19 +74,19 @@ int main(int argc, char** argv) {
                     int neighbor_r_id = (neighbor_y * input_jpeg.width + neighbor_x) * input_jpeg.num_channels;
 
                     // Compute range weights for each channel using SIMD
-                    __m256 range_dist_r = _mm256_set1_ps(input_jpeg.buffer[r_id] - input_jpeg.buffer[neighbor_r_id]);
-                    __m256 range_weight_r = _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(range_dist_r, range_dist_r), _mm256_set1_ps(-inv_sigma_r)));
+                    float range_dist_r = input_jpeg.buffer[r_id] - input_jpeg.buffer[neighbor_r_id];
+                    float range_weight_r = expf(-(range_dist_r * range_dist_r) * inv_sigma_r);
 
-                    __m256 range_dist_g = _mm256_set1_ps(input_jpeg.buffer[g_id] - input_jpeg.buffer[neighbor_r_id + 1]);
-                    __m256 range_weight_g = _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(range_dist_g, range_dist_g), _mm256_set1_ps(-inv_sigma_r)));
+                    float range_dist_g = input_jpeg.buffer[g_id] - input_jpeg.buffer[neighbor_r_id + 1];
+                    float range_weight_g = expf(-(range_dist_g * range_dist_g) * inv_sigma_r);
 
-                    __m256 range_dist_b = _mm256_set1_ps(input_jpeg.buffer[b_id] - input_jpeg.buffer[neighbor_r_id + 2]);
-                    __m256 range_weight_b = _mm256_exp_ps(_mm256_mul_ps(_mm256_mul_ps(range_dist_b, range_dist_b), _mm256_set1_ps(-inv_sigma_r)));
+                    float range_dist_b = input_jpeg.buffer[b_id] - input_jpeg.buffer[neighbor_r_id + 2];
+                    float range_weight_b = expf(-(range_dist_b * range_dist_b) * inv_sigma_r);
 
                     // Multiply spatial and range weights
-                    __m256 weight_r = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_r);
-                    __m256 weight_g = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_g);
-                    __m256 weight_b = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], range_weight_b);
+                    __m256 weight_r = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_r));
+                    __m256 weight_g = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_g));
+                    __m256 weight_b = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_b));
 
                     // Sum weighted pixel values
                     r_sum += input_jpeg.buffer[neighbor_r_id] * weight_r[0];
@@ -101,14 +94,16 @@ int main(int argc, char** argv) {
                     b_sum += input_jpeg.buffer[neighbor_r_id + 2] * weight_b[0];
 
                     // Accumulate normalization factor
-                    norm_factor += weight_r[0] + weight_g[0] + weight_b[0];
+                    norm_factor_r += weight_r[0];
+                    norm_factor_g += weight_g[0];
+                    norm_factor_b += weight_b[0];
                 }
             }
 
             // Normalize the results and clamp the values
-            filteredImage[r_id] = clamp_pixel_value(r_sum / norm_factor);
-            filteredImage[g_id] = clamp_pixel_value(g_sum / norm_factor);
-            filteredImage[b_id] = clamp_pixel_value(b_sum / norm_factor);
+            filteredImage[r_id] = clamp_pixel_value(r_sum / norm_factor_r);
+            filteredImage[g_id] = clamp_pixel_value(g_sum / norm_factor_g);
+            filteredImage[b_id] = clamp_pixel_value(b_sum / norm_factor_b);
         }
     }
 
