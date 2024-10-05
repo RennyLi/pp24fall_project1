@@ -1,10 +1,3 @@
-//
-// Created by Zhong Yebin on 2023/9/16.
-// Email: yebinzhong@link.cuhk.edu.cn
-//
-// OpenACC implementation of bilateral filtering on JPEG image
-//
-
 #include <memory.h>
 #include <cstring>
 #include <chrono>
@@ -26,6 +19,10 @@ ColorValue acc_clamp_pixel_value(float value)
 float acc_bilateral_filter(const ColorValue* values, int row, int col, int width,
                            float sigma_s, float sigma_r)
 {
+    if (row < 1 || col < 1 || row >= width - 1 || col >= width - 1) {
+        return values[row * width + col];  // Return original value if out of bounds
+    }
+
     float w_spatial[3][3] = {0};
     float w_intensity[3][3] = {0};
     float value_center = values[row * width + col];
@@ -72,22 +69,19 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // Constants for bilateral filter
-    float sigma_s = 15.0f;
-    float sigma_r = 30.0f;
     int width = input_jpeg.width;
     int height = input_jpeg.height;
-    size_t image_size = width * height * sizeof(ColorValue);
+    size_t size = width * height;
 
-    // Allocate output arrays
-    ColorValue* filtered_r = new ColorValue[width * height];
-    ColorValue* filtered_g = new ColorValue[width * height];
-    ColorValue* filtered_b = new ColorValue[width * height];
+    // Allocate memory for filtered image
+    ColorValue* filtered_r = new ColorValue[size];
+    ColorValue* filtered_g = new ColorValue[size];
+    ColorValue* filtered_b = new ColorValue[size];
 
-    // Start timing
-    auto start_time = std::chrono::high_resolution_clock::now();
+    // Define bilateral filter parameters
+    float sigma_s = 15.0f;  // Spatial standard deviation
+    float sigma_r = 30.0f;  // Range standard deviation
 
-    // Explicitly move the structure member arrays to the GPU, instead of the whole structure
 #pragma acc enter data copyin(input_jpeg.r_values[0:width*height], \
                               input_jpeg.g_values[0:width*height], \
                               input_jpeg.b_values[0:width*height], \
@@ -95,6 +89,9 @@ int main(int argc, char** argv)
                               filtered_g[0:width*height], \
                               filtered_b[0:width*height])
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    // Parallelize using OpenACC
 #pragma acc parallel present(input_jpeg.r_values, input_jpeg.g_values, input_jpeg.b_values, \
                              filtered_r, filtered_g, filtered_b) \
     num_gangs(1024) vector_length(256)
@@ -111,35 +108,50 @@ int main(int argc, char** argv)
             }
         }
     }
+#pragma acc wait // Ensure all calculations are complete
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        end_time - start_time);
+
+    // Copy results back from device
 #pragma acc update self(filtered_r[0:width*height], \
                         filtered_g[0:width*height], \
                         filtered_b[0:width*height])
 
-#pragma acc exit data delete(input_jpeg.r_values, input_jpeg.g_values, input_jpeg.b_values, \
-                             filtered_r, filtered_g, filtered_b)
+    // Create output image from filtered results
+    unsigned char* output_buffer = new unsigned char[width * height * 3];
+    for (int i = 0; i < width * height; ++i)
+    {
+        output_buffer[i * 3] = filtered_r[i];
+        output_buffer[i * 3 + 1] = filtered_g[i];
+        output_buffer[i * 3 + 2] = filtered_b[i];
+    }
 
-    // End timing
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "Transformation Complete!" << std::endl;
-    std::cout << "Execution Time: " << elapsed_time.count() << " milliseconds\n";
-
-    // Save output JPEG image
+    // Save the output image
     const char* output_filepath = argv[2];
     std::cout << "Output file to: " << output_filepath << "\n";
-    JpegSOA output_jpeg{filtered_r, filtered_g, filtered_b, width, height, input_jpeg.num_channels, input_jpeg.color_space};
+    JPEGMeta output_jpeg{output_buffer, width, height, 3, input_jpeg.color_space};
     if (export_jpeg(output_jpeg, output_filepath))
     {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
     }
 
-    // Post-processing
+    // Cleanup
     delete[] filtered_r;
     delete[] filtered_g;
     delete[] filtered_b;
-    std::cout << "Transformation Complete!" << std::endl;
+    delete[] output_buffer;
 
+#pragma acc exit data delete(input_jpeg.r_values[0:width*height], \
+                             input_jpeg.g_values[0:width*height], \
+                             input_jpeg.b_values[0:width*height], \
+                             filtered_r[0:width*height], \
+                             filtered_g[0:width*height], \
+                             filtered_b[0:width*height])
+
+    std::cout << "Transformation Complete!" << std::endl;
+    std::cout << "Execution Time: " << elapsed_time.count() << " milliseconds\n";
     return 0;
 }
