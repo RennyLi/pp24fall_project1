@@ -1,3 +1,10 @@
+//
+// Created by Zhong Yebin on 2023/9/16.
+// Email: yebinzhong@link.cuhk.edu.cn
+//
+// OpenACC implementation of image filtering on JPEG
+//
+
 #include <memory.h>
 #include <cstring>
 #include <chrono>
@@ -16,142 +23,121 @@ ColorValue acc_clamp_pixel_value(float value)
 }
 
 #pragma acc routine seq
-float acc_bilateral_filter(const ColorValue* values, int row, int col, int width,
-                           float sigma_s, float sigma_r)
-{
-    if (row < 1 || col < 1 || row >= width - 1 || col >= width - 1) {
-        return values[row * width + col];  // Return original value if out of bounds
-    }
-
-    float w_spatial[3][3] = {0};
-    float w_intensity[3][3] = {0};
-    float value_center = values[row * width + col];
+float acc_bilateral_filter(const unsigned char* image_buffer, int pixel_id, int width, int num_channels,
+                           float sigma_s, float sigma_r, int x, int y) {
+    int line_width = width * num_channels;
     float sum_weights = 0.0f;
     float filtered_value = 0.0f;
 
-    for (int ky = -1; ky <= 1; ++ky)
-    {
-        for (int kx = -1; kx <= 1; ++kx)
-        {
-            int idx_y = row + ky;
-            int idx_x = col + kx;
-            int idx = idx_y * width + idx_x;
-            float spatial_dist = ky * ky + kx * kx;
-            float intensity_dist = value_center - values[idx];
+    float central_value = image_buffer[pixel_id];
+    float sigma_s_sq = 2.0f * sigma_s * sigma_s;
+    float sigma_r_sq = 2.0f * sigma_r * sigma_r;
 
-            w_spatial[ky + 1][kx + 1] = expf(-spatial_dist / (2 * sigma_s * sigma_s));
-            w_intensity[ky + 1][kx + 1] = expf(-intensity_dist * intensity_dist / (2 * sigma_r * sigma_r));
+    for (int ky = -1; ky <= 1; ++ky) {
+        for (int kx = -1; kx <= 1; ++kx) {
+            int neighbor_x = x + kx;
+            int neighbor_y = y + ky;
 
-            float weight = w_spatial[ky + 1][kx + 1] * w_intensity[ky + 1][kx + 1];
-            filtered_value += values[idx] * weight;
+            // 边界处理，确保不访问越界像素
+            if (neighbor_x < 0 || neighbor_x >= width || neighbor_y < 0 || neighbor_y >= width) {
+                continue;
+            }
+
+            int neighbor_id = (neighbor_y * width + neighbor_x) * num_channels;
+            float neighbor_value = image_buffer[neighbor_id];
+
+            float spatial_dist = kx * kx + ky * ky;
+            float w_spatial = expf(-spatial_dist / sigma_s_sq);
+
+            float intensity_dist = central_value - neighbor_value;
+            float w_intensity = expf(-(intensity_dist * intensity_dist) / sigma_r_sq);
+
+            float weight = w_spatial * w_intensity;
+
+            filtered_value += neighbor_value * weight;
             sum_weights += weight;
         }
     }
-    return acc_clamp_pixel_value(filtered_value / sum_weights);
+
+    // 返回归一化的滤波结果
+    return filtered_value / sum_weights;
 }
 
-int main(int argc, char** argv)
-{
-    if (argc != 3)
-    {
-        std::cerr << "Invalid argument, should be: ./executable "
-                     "/path/to/input/jpeg /path/to/output/jpeg\n";
+int main(int argc, char** argv) {
+    if (argc != 3) {
+        std::cerr << "Invalid argument, should be: ./executable /path/to/input/jpeg /path/to/output/jpeg\n";
         return -1;
     }
 
     // Read JPEG File
     const char* input_filename = argv[1];
     std::cout << "Input file from: " << input_filename << "\n";
-    JpegSOA input_jpeg = read_jpeg_soa(input_filename);
-    if (input_jpeg.r_values == nullptr)
-    {
-        std::cerr << "Failed to read input JPEG image\n";
-        return -1;
-    }
+    auto input_jpeg = read_from_jpeg(input_filename);
 
     int width = input_jpeg.width;
     int height = input_jpeg.height;
-    size_t size = width * height;
+    int num_channels = input_jpeg.num_channels;
+    size_t buffer_size = width * height * num_channels;
+    unsigned char* filteredImage = new unsigned char[buffer_size];
+    unsigned char* buffer = new unsigned char[buffer_size];
 
-    // Allocate memory for filtered image
-    ColorValue* filtered_r = new ColorValue[size];
-    ColorValue* filtered_g = new ColorValue[size];
-    ColorValue* filtered_b = new ColorValue[size];
+    memcpy(buffer, input_jpeg.buffer, buffer_size);
+    delete[] input_jpeg.buffer;
 
-    // Define bilateral filter parameters
-    float sigma_s = 15.0f;  // Spatial standard deviation
-    float sigma_r = 30.0f;  // Range standard deviation
+    float sigma_s = 15.0f;  // spatial
+    float sigma_r = 30.0f;  // range
 
-#pragma acc enter data copyin(input_jpeg.r_values[0:width*height], \
-                              input_jpeg.g_values[0:width*height], \
-                              input_jpeg.b_values[0:width*height], \
-                              filtered_r[0:width*height], \
-                              filtered_g[0:width*height], \
-                              filtered_b[0:width*height])
+#pragma acc enter data copyin(filteredImage[0:buffer_size], buffer[0:buffer_size])
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Parallelize using OpenACC
-#pragma acc parallel present(input_jpeg.r_values, input_jpeg.g_values, input_jpeg.b_values, \
-                             filtered_r, filtered_g, filtered_b) \
-    num_gangs(1024) vector_length(256)
+    // 每个颜色通道上双边滤波
+#pragma acc parallel present(filteredImage[0:buffer_size], buffer[0:buffer_size]) num_gangs(1024)
     {
 #pragma acc loop independent
-        for (int y = 1; y < height - 1; ++y)
-        {
+        for (int y = 1; y < height - 1; y++) {
 #pragma acc loop independent
-            for (int x = 1; x < width - 1; ++x)
-            {
-                filtered_r[y * width + x] = acc_bilateral_filter(input_jpeg.r_values, y, x, width, sigma_s, sigma_r);
-                filtered_g[y * width + x] = acc_bilateral_filter(input_jpeg.g_values, y, x, width, sigma_s, sigma_r);
-                filtered_b[y * width + x] = acc_bilateral_filter(input_jpeg.b_values, y, x, width, sigma_s, sigma_r);
+            for (int x = 1; x < width - 1; x++) {
+                // R滤波
+                int r_id = (y * width + x) * num_channels;
+                filteredImage[r_id] = acc_clamp_pixel_value(
+                    acc_bilateral_filter(buffer, r_id, width, num_channels, sigma_s, sigma_r, x, y)
+                );
+
+                // G滤波
+                int g_id = r_id + 1;
+                filteredImage[g_id] = acc_clamp_pixel_value(
+                    acc_bilateral_filter(buffer, g_id, width, num_channels, sigma_s, sigma_r, x, y)
+                );
+
+                // B滤波
+                int b_id = r_id + 2;
+                filteredImage[b_id] = acc_clamp_pixel_value(
+                    acc_bilateral_filter(buffer, b_id, width, num_channels, sigma_s, sigma_r, x, y)
+                );
             }
         }
     }
-#pragma acc wait // Ensure all calculations are complete
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        end_time - start_time);
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    // Copy results back from device
-#pragma acc update self(filtered_r[0:width*height], \
-                        filtered_g[0:width*height], \
-                        filtered_b[0:width*height])
+#pragma acc update self(filteredImage[0:buffer_size])
 
-    // Create output image from filtered results
-    unsigned char* output_buffer = new unsigned char[width * height * 3];
-    for (int i = 0; i < width * height; ++i)
-    {
-        output_buffer[i * 3] = filtered_r[i];
-        output_buffer[i * 3 + 1] = filtered_g[i];
-        output_buffer[i * 3 + 2] = filtered_b[i];
-    }
+#pragma acc exit data delete(buffer[0:buffer_size], filteredImage[0:buffer_size])
 
-    // Save the output image
     const char* output_filepath = argv[2];
     std::cout << "Output file to: " << output_filepath << "\n";
-    JPEGMeta output_jpeg{output_buffer, width, height, 3, input_jpeg.color_space};
-    if (export_jpeg(output_jpeg, output_filepath))
-    {
+    JPEGMeta output_jpeg{filteredImage, input_jpeg.width, input_jpeg.height, input_jpeg.num_channels, input_jpeg.color_space};
+    if (export_jpeg(output_jpeg, output_filepath)) {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
     }
 
-    // Cleanup
-    delete[] filtered_r;
-    delete[] filtered_g;
-    delete[] filtered_b;
-    delete[] output_buffer;
-
-#pragma acc exit data delete(input_jpeg.r_values[0:width*height], \
-                             input_jpeg.g_values[0:width*height], \
-                             input_jpeg.b_values[0:width*height], \
-                             filtered_r[0:width*height], \
-                             filtered_g[0:width*height], \
-                             filtered_b[0:width*height])
-
+    delete[] buffer;
+    delete[] filteredImage;
     std::cout << "Transformation Complete!" << std::endl;
     std::cout << "Execution Time: " << elapsed_time.count() << " milliseconds\n";
+
     return 0;
 }

@@ -1,8 +1,7 @@
 Current directory: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts
 OpenACC PartC
 Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
-Failing in Thread:1
-call to cuStreamSynchronize returned error 700: Illegal address during kernel execution
-
-srun: error: node02: task 0: Exited with exit code 1
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openacc.jpg
+Transformation Complete!
+Execution Time: 7 milliseconds
 
