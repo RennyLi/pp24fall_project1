@@ -12,7 +12,7 @@
 #include <cmath>
 #include "../utils.hpp"
 
-// Define a structure to pass data to each thread
+// create a structure to pass data to individual threads
 struct ThreadData {
     JpegSOA* input_jpeg;
     JpegSOA* output_jpeg;
@@ -24,12 +24,11 @@ struct ThreadData {
     float sigma_r;
 };
 
-// Helper function to clamp pixel values between 0 and 255
 inline unsigned char clamp_pixel_value(float value) {
     return static_cast<unsigned char>(std::max(0.0f, std::min(255.0f, value)));
 }
 
-// Bilateral filter function to be executed by each thread
+// bilateral filtering function executed by each thread
 void* bilateral_filter_thread_function(void* arg) {
     ThreadData* data = (ThreadData*)arg;
 
@@ -40,18 +39,15 @@ void* bilateral_filter_thread_function(void* arg) {
             float r_sum = 0, g_sum = 0, b_sum = 0;
             float norm_factor_r = 0, norm_factor_g = 0, norm_factor_b = 0;
 
-            // Iterate over the 3x3 kernel
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
                     int neighbor_x = x + kx;
                     int neighbor_y = y + ky;
                     int neighbor_index = neighbor_y * data->width + neighbor_x;
 
-                    // Compute spatial weights
                     float spatial_dist = kx * kx + ky * ky;
                     float spatial_weight = expf(-spatial_dist / (2 * data->sigma_s * data->sigma_s));
 
-                    // Compute range weights and apply bilateral filter for each channel (R, G, B)
                     float range_dist_r = data->input_jpeg->r_values[index] - data->input_jpeg->r_values[neighbor_index];
                     float range_weight_r = expf(-(range_dist_r * range_dist_r) / (2 * data->sigma_r * data->sigma_r));
                     float weight_r = spatial_weight * range_weight_r;
@@ -72,7 +68,6 @@ void* bilateral_filter_thread_function(void* arg) {
                 }
             }
 
-            // Normalize and clamp the results for each channel
             data->output_jpeg->r_values[index] = clamp_pixel_value(r_sum / norm_factor_r);
             data->output_jpeg->g_values[index] = clamp_pixel_value(g_sum / norm_factor_g);
             data->output_jpeg->b_values[index] = clamp_pixel_value(b_sum / norm_factor_b);
@@ -94,14 +89,13 @@ int main(int argc, char** argv) {
 
     std::cout << "Input file from: " << input_filename << "\n";
     
-    // Read input JPEG image
     JpegSOA input_jpeg = read_jpeg_soa(input_filename);
     if (input_jpeg.r_values == nullptr) {
         std::cerr << "Failed to read input JPEG image\n";
         return -1;
     }
 
-    // Prepare output image
+    // prepare output image
     JpegSOA output_jpeg;
     output_jpeg.width = input_jpeg.width;
     output_jpeg.height = input_jpeg.height;
@@ -112,16 +106,15 @@ int main(int argc, char** argv) {
     output_jpeg.g_values = new ColorValue[output_jpeg.width * output_jpeg.height];
     output_jpeg.b_values = new ColorValue[output_jpeg.width * output_jpeg.height];
 
-    // Bilateral filter constants
-    float sigma_s = 15.0f; // Spatial kernel standard deviation
-    float sigma_r = 30.0f; // Range kernel standard deviation
+    float sigma_s = 15.0f; 
+    float sigma_r = 30.0f; 
 
-    // Create threads
+    // create threads
     pthread_t* threads = new pthread_t[NUM_THREADS];
     ThreadData* threadData = new ThreadData[NUM_THREADS];
     int rowsPerThread = input_jpeg.height / NUM_THREADS;
 
-    auto start_time = std::chrono::high_resolution_clock::now(); // Start time recording
+    auto start_time = std::chrono::high_resolution_clock::now(); 
 
     for (int i = 0; i < NUM_THREADS; i++) {
         threadData[i] = {&input_jpeg,
@@ -139,16 +132,14 @@ int main(int argc, char** argv) {
         pthread_join(threads[i], NULL);
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now(); // End time recording
+    auto end_time = std::chrono::high_resolution_clock::now(); 
 
-    // Save the filtered image
     std::cout << "Output file to: " << output_filename << "\n";
     if (export_jpeg(output_jpeg, output_filename)) {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
     }
 
-    // Cleanup
     delete[] input_jpeg.r_values;
     delete[] input_jpeg.g_values;
     delete[] input_jpeg.b_values;

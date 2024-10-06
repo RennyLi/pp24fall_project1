@@ -5,12 +5,10 @@
 #include <cmath>
 #include "../utils.hpp"
 
-// Helper function to clamp pixel values between 0 and 255
 inline unsigned char clamp_pixel_value(float value) {
     return static_cast<unsigned char>(std::max(0.0f, std::min(255.0f, value)));
 }
 
-// SIMD optimized exp function
 __m256 _mm256_exp_ps(__m256 invec) {
     alignas(32) float element[8];
     _mm256_store_ps(element, invec);
@@ -26,7 +24,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Read JPEG File using utils.cpp
     const char* input_filepath = argv[1];
     std::cout << "Input file from: " << input_filepath << "\n";
     auto input_jpeg = read_from_jpeg(input_filepath);
@@ -35,19 +32,18 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Filtered image buffer
+    // buffer for the filtered image
     auto filteredImage = new unsigned char[input_jpeg.width * input_jpeg.height * input_jpeg.num_channels];
     memset(filteredImage, 0, input_jpeg.width * input_jpeg.height * input_jpeg.num_channels);
 
-    // Constants for bilateral filter
-    float sigma_s = 15.0f; // Spatial kernel standard deviation
-    float sigma_r = 30.0f; // Range kernel standard deviation
+    // constants used for bilateral filter
+    float sigma_s = 15.0f; 
+    float sigma_r = 30.0f; 
     float inv_sigma_s = 1.0f / (2 * sigma_s * sigma_s);
     float inv_sigma_r = 1.0f / (2 * sigma_r * sigma_r);
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Perform SIMD-optimized bilateral filtering
     for (int y = 1; y < input_jpeg.height - 1; y++) {
         for (int x = 1; x < input_jpeg.width - 1; x++) {
             int r_id = (y * input_jpeg.width + x) * input_jpeg.num_channels;
@@ -57,7 +53,6 @@ int main(int argc, char** argv) {
             float r_sum = 0, g_sum = 0, b_sum = 0;
             float norm_factor_r = 0, norm_factor_g = 0, norm_factor_b = 0;
 
-            // Precompute spatial weights for 3x3 kernel using SIMD
             __m256 spatial_weights[3][3];
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
@@ -66,14 +61,12 @@ int main(int argc, char** argv) {
                 }
             }
 
-            // Iterate over the 3x3 kernel
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
                     int neighbor_x = x + kx;
                     int neighbor_y = y + ky;
                     int neighbor_r_id = (neighbor_y * input_jpeg.width + neighbor_x) * input_jpeg.num_channels;
 
-                    // Compute range weights for each channel using SIMD
                     float range_dist_r = input_jpeg.buffer[r_id] - input_jpeg.buffer[neighbor_r_id];
                     float range_weight_r = expf(-(range_dist_r * range_dist_r) * inv_sigma_r);
 
@@ -83,24 +76,21 @@ int main(int argc, char** argv) {
                     float range_dist_b = input_jpeg.buffer[b_id] - input_jpeg.buffer[neighbor_r_id + 2];
                     float range_weight_b = expf(-(range_dist_b * range_dist_b) * inv_sigma_r);
 
-                    // Multiply spatial and range weights
                     __m256 weight_r = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_r));
                     __m256 weight_g = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_g));
                     __m256 weight_b = _mm256_mul_ps(spatial_weights[ky + 1][kx + 1], _mm256_set1_ps(range_weight_b));
 
-                    // Sum weighted pixel values
                     r_sum += input_jpeg.buffer[neighbor_r_id] * weight_r[0];
                     g_sum += input_jpeg.buffer[neighbor_r_id + 1] * weight_g[0];
                     b_sum += input_jpeg.buffer[neighbor_r_id + 2] * weight_b[0];
 
-                    // Accumulate normalization factor
+                    // sum up the normalization factor
                     norm_factor_r += weight_r[0];
                     norm_factor_g += weight_g[0];
                     norm_factor_b += weight_b[0];
                 }
             }
 
-            // Normalize the results and clamp the values
             filteredImage[r_id] = clamp_pixel_value(r_sum / norm_factor_r);
             filteredImage[g_id] = clamp_pixel_value(g_sum / norm_factor_g);
             filteredImage[b_id] = clamp_pixel_value(b_sum / norm_factor_b);
@@ -110,7 +100,6 @@ int main(int argc, char** argv) {
     auto end_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    // Save output JPEG image using utils.cpp
     const char* output_filepath = argv[2];
     std::cout << "Output file to: " << output_filepath << "\n";
     JPEGMeta output_jpeg{filteredImage, input_jpeg.width, input_jpeg.height, input_jpeg.num_channels, input_jpeg.color_space};
@@ -119,7 +108,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Post-processing
     delete[] input_jpeg.buffer;
     delete[] filteredImage;
     std::cout << "Transformation Complete!" << std::endl;

@@ -9,23 +9,21 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
-#include <mpi.h> // MPI Header
+#include <mpi.h> 
 
 #include "../utils.hpp"
 
 #define MASTER 0
 #define TAG_GATHER 0
 
-// Function to apply bilateral filter on a part of the image (parallelized using MPI)
 void bilateral_filter_mpi(unsigned char* filtered_r, const unsigned char* input_r, const unsigned char* input_g, const unsigned char* input_b, 
                           int width, int height, int start_line, int end_line, int radius, float sigma_s, float sigma_r)
 {
-    // Precompute some constants
     const float inv_two_sigma_s2 = 1.0f / (2 * sigma_s * sigma_s);
     const float inv_two_sigma_r2 = 1.0f / (2 * sigma_r * sigma_r);
     const int filter_size = 2 * radius + 1;
 
-    // Apply bilateral filter
+    // apply bilateral filter
     for (int y = start_line; y < end_line; y++)
     {
         for (int x = radius; x < width - radius; x++)
@@ -35,7 +33,7 @@ void bilateral_filter_mpi(unsigned char* filtered_r, const unsigned char* input_
 
             float center_value_r = input_r[y * width + x];
 
-            // Iterate through the kernel
+            // iterate through the kernel
             for (int ky = -radius; ky <= radius; ky++)
             {
                 for (int kx = -radius; kx <= radius; kx++)
@@ -45,24 +43,21 @@ void bilateral_filter_mpi(unsigned char* filtered_r, const unsigned char* input_
 
                     float neighbor_value_r = input_r[neighbor_y * width + neighbor_x];
 
-                    // Spatial weight
                     float spatial_dist = kx * kx + ky * ky;
                     float spatial_weight = expf(-spatial_dist * inv_two_sigma_s2);
 
-                    // Range weight
                     float range_dist_r = center_value_r - neighbor_value_r;
                     float range_weight_r = expf(-(range_dist_r * range_dist_r) * inv_two_sigma_r2);
 
-                    // Total weight
                     float weight_r = spatial_weight * range_weight_r;
 
-                    // Accumulate
+                    // accumulate
                     r_acc += neighbor_value_r * weight_r;
                     norm_factor += weight_r;
                 }
             }
 
-            // Normalize and store the result
+            // normalize and store the result
             filtered_r[y * width + x] = static_cast<unsigned char>(r_acc / norm_factor);
         }
     }
@@ -77,16 +72,16 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // Start the MPI
+    // start the MPI
     MPI_Init(&argc, &argv);
 
-    // Get the number of tasks and rank
+    // get the number of tasks and rank
     int numtasks;
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     int taskid;
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
 
-    // Read input JPEG image
+    // read input JPEG image
     const char* input_filepath = argv[1];
     JpegSOA input_jpeg = read_jpeg_soa(input_filepath);
     if (input_jpeg.r_values == nullptr)
@@ -99,8 +94,8 @@ int main(int argc, char** argv)
     int width = input_jpeg.width;
     int height = input_jpeg.height;
 
-    // Divide the task
-    int total_line_num = height - 2;  // Exclude borders
+    // divide the task
+    int total_line_num = height - 2;  // exclude borders
     int line_per_task = total_line_num / numtasks;
     int left_line_num = total_line_num % numtasks;
 
@@ -117,19 +112,18 @@ int main(int argc, char** argv)
             cuts[i + 1] = cuts[i] + line_per_task;
     }
 
-    // Allocate space for filtered image
+    // allocate space for filtered image
     unsigned char* filtered_r = new unsigned char[width * height];
     unsigned char* filtered_g = new unsigned char[width * height];
     unsigned char* filtered_b = new unsigned char[width * height];
 
-    // Define filter parameters
     int radius = 1;
     float sigma_s = 15.0f;
     float sigma_r = 30.0f;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // Perform bilateral filtering on each process's part of the image
+    // perform bilateral filtering on each process's part of the image
     bilateral_filter_mpi(filtered_r, input_jpeg.r_values, input_jpeg.g_values, input_jpeg.b_values, 
                          width, height, cuts[taskid], cuts[taskid + 1], radius, sigma_s, sigma_r);
     bilateral_filter_mpi(filtered_g, input_jpeg.g_values, input_jpeg.r_values, input_jpeg.b_values, 
@@ -137,7 +131,7 @@ int main(int argc, char** argv)
     bilateral_filter_mpi(filtered_b, input_jpeg.b_values, input_jpeg.r_values, input_jpeg.g_values, 
                          width, height, cuts[taskid], cuts[taskid + 1], radius, sigma_s, sigma_r);
 
-    // Master process gathers the results from all processes
+    // master process gathers the results from all processes
     if (taskid == MASTER)
     {
         for (int i = 1; i < numtasks; i++)
@@ -147,7 +141,6 @@ int main(int argc, char** argv)
             MPI_Recv(filtered_b + cuts[i] * width, (cuts[i + 1] - cuts[i]) * width, MPI_UNSIGNED_CHAR, i, TAG_GATHER, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
-        // Write the filtered image to file
         const char* output_filepath = argv[2];
         JpegSOA output_jpeg = {filtered_r, filtered_g, filtered_b, width, height, 3, input_jpeg.color_space};
         if (export_jpeg(output_jpeg, output_filepath) != 0)
@@ -159,7 +152,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        // Send results to the master process
+        // send results to the master process
         MPI_Send(filtered_r + cuts[taskid] * width, (cuts[taskid + 1] - cuts[taskid]) * width, MPI_UNSIGNED_CHAR, MASTER, TAG_GATHER, MPI_COMM_WORLD);
         MPI_Send(filtered_g + cuts[taskid] * width, (cuts[taskid + 1] - cuts[taskid]) * width, MPI_UNSIGNED_CHAR, MASTER, TAG_GATHER, MPI_COMM_WORLD);
         MPI_Send(filtered_b + cuts[taskid] * width, (cuts[taskid + 1] - cuts[taskid]) * width, MPI_UNSIGNED_CHAR, MASTER, TAG_GATHER, MPI_COMM_WORLD);
@@ -168,7 +161,6 @@ int main(int argc, char** argv)
     auto end_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-    // Clean up
     delete[] filtered_r;
     delete[] filtered_g;
     delete[] filtered_b;

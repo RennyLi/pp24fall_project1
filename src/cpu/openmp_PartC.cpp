@@ -13,7 +13,6 @@
 
 #include "../utils.hpp"
 
-// Helper function to clamp pixel values between 0 and 255
 inline unsigned char clamp_pixel_value(float value) {
     return static_cast<unsigned char>(std::max(0.0f, std::min(255.0f, value)));
 }
@@ -24,7 +23,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Read JPEG File
     const char* input_filename = argv[1];
     const char* output_filename = argv[2];
     int NUM_THREADS = std::stoi(argv[3]);
@@ -36,7 +34,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Prepare output image
+    // prepare output image
     JpegSOA output_jpeg;
     output_jpeg.width = input_jpeg.width;
     output_jpeg.height = input_jpeg.height;
@@ -47,16 +45,14 @@ int main(int argc, char** argv) {
     output_jpeg.g_values = new ColorValue[output_jpeg.width * output_jpeg.height];
     output_jpeg.b_values = new ColorValue[output_jpeg.width * output_jpeg.height];
 
-    // Bilateral filter constants
-    float sigma_s = 15.0f;  // Spatial kernel standard deviation
-    float sigma_r = 30.0f;  // Range kernel standard deviation
+    float sigma_s = 15.0f;  
+    float sigma_r = 30.0f;  
 
-    auto start_time = std::chrono::high_resolution_clock::now();  // Start time recording
+    auto start_time = std::chrono::high_resolution_clock::now();  
 
-    // Set the number of threads
+    // configure the number of threads
     omp_set_num_threads(NUM_THREADS);
 
-    // Perform bilateral filtering using OpenMP
 #pragma omp parallel for
     for (int y = 1; y < input_jpeg.height - 1; y++) {
         for (int x = 1; x < input_jpeg.width - 1; x++) {
@@ -65,18 +61,15 @@ int main(int argc, char** argv) {
             float r_sum = 0, g_sum = 0, b_sum = 0;
             float norm_factor_r = 0, norm_factor_g = 0, norm_factor_b = 0;
 
-            // Iterate over the 3x3 kernel
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
                     int neighbor_x = x + kx;
                     int neighbor_y = y + ky;
                     int neighbor_index = neighbor_y * input_jpeg.width + neighbor_x;
 
-                    // Compute spatial weights
                     float spatial_dist = kx * kx + ky * ky;
                     float spatial_weight = expf(-spatial_dist / (2 * sigma_s * sigma_s));
 
-                    // Compute range weights and apply bilateral filter for each channel (R, G, B)
                     float range_dist_r = input_jpeg.r_values[index] - input_jpeg.r_values[neighbor_index];
                     float range_weight_r = expf(-(range_dist_r * range_dist_r) / (2 * sigma_r * sigma_r));
                     float weight_r = spatial_weight * range_weight_r;
@@ -97,23 +90,20 @@ int main(int argc, char** argv) {
                 }
             }
 
-            // Normalize and clamp the results for each channel
             output_jpeg.r_values[index] = clamp_pixel_value(r_sum / norm_factor_r);
             output_jpeg.g_values[index] = clamp_pixel_value(g_sum / norm_factor_g);
             output_jpeg.b_values[index] = clamp_pixel_value(b_sum / norm_factor_b);
         }
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now();  // End time recording
+    auto end_time = std::chrono::high_resolution_clock::now();  
 
-    // Save the filtered image
     std::cout << "Output file to: " << output_filename << "\n";
     if (export_jpeg(output_jpeg, output_filename)) {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
     }
 
-    // Cleanup
     delete[] input_jpeg.r_values;
     delete[] input_jpeg.g_values;
     delete[] input_jpeg.b_values;
