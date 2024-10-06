@@ -1,7 +1,243 @@
 Current directory: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts
+Sequential PartC Array-of-Structure (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
+Transformation Complete!
+Execution Time: 3743 milliseconds
+
+Sequential PartC Structure-of-Array (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-Bilateral.jpg
+Transformation Complete!
+Execution Time: 3657 milliseconds
+
+SIMD(AVX2) PartC (Optimized with -O2)
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-simd.jpg
+Transformation Complete!
+Execution Time: 11806 milliseconds
+
+MPI PartC (Optimized with -O2)
+Number of processes: 1
+Transformation Complete!
+Execution Time: 9243 milliseconds
+
+Number of processes: 2
+Transformation Complete!
+Execution Time: 5773 milliseconds
+Transformation Complete!
+Execution Time: 6137 milliseconds
+
+Number of processes: 4
+Transformation Complete!
+Execution Time: 2865 milliseconds
+Transformation Complete!
+Execution Time: 2883 milliseconds
+Transformation Complete!
+Execution Time: 2898 milliseconds
+Transformation Complete!
+Execution Time: 3270 milliseconds
+
+Number of processes: 8
+Transformation Complete!
+Execution Time: 1356 milliseconds
+Transformation Complete!
+Execution Time: 1385 milliseconds
+Transformation Complete!
+Execution Time: 1434 milliseconds
+Transformation Complete!
+Execution Time: 1461 milliseconds
+Transformation Complete!
+Execution Time: 1462 milliseconds
+Transformation Complete!
+Execution Time: 1467 milliseconds
+Transformation Complete!
+Execution Time: 1469 milliseconds
+Transformation Complete!
+Execution Time: 1843 milliseconds
+
+Number of processes: 16
+Transformation Complete!
+Execution Time: 665 milliseconds
+Transformation Complete!
+Execution Time: 674 milliseconds
+Transformation Complete!
+Execution Time: 676 milliseconds
+Transformation Complete!
+Execution Time: 693 milliseconds
+Transformation Complete!
+Execution Time: 714 milliseconds
+Transformation Complete!
+Execution Time: 717 milliseconds
+Transformation Complete!
+Execution Time: 724 milliseconds
+Transformation Complete!
+Execution Time: 728 milliseconds
+Transformation Complete!
+Execution Time: 731 milliseconds
+Transformation Complete!
+Execution Time: 735 milliseconds
+Transformation Complete!
+Execution Time: 734 milliseconds
+Transformation Complete!
+Execution Time: 739 milliseconds
+Transformation Complete!
+Execution Time: 738 milliseconds
+Transformation Complete!
+Execution Time: 742 milliseconds
+Transformation Complete!
+Execution Time: 741 milliseconds
+Transformation Complete!
+Execution Time: 1109 milliseconds
+
+Number of processes: 32
+Transformation Complete!
+Execution Time: 335 milliseconds
+Transformation Complete!
+Execution Time: 346 milliseconds
+Transformation Complete!
+Execution Time: 337 milliseconds
+Transformation Complete!
+Execution Time: 344 milliseconds
+Transformation Complete!
+Execution Time: 338 milliseconds
+Transformation Complete!
+Execution Time: 346 milliseconds
+Transformation Complete!
+Execution Time: 370 milliseconds
+Transformation Complete!
+Execution Time: 361 milliseconds
+Transformation Complete!
+Execution Time: 370 milliseconds
+Transformation Complete!
+Execution Time: 383 milliseconds
+Transformation Complete!
+Execution Time: 372 milliseconds
+Transformation Complete!
+Execution Time: 369 milliseconds
+Transformation Complete!
+Execution Time: 383 milliseconds
+Transformation Complete!
+Execution Time: 380 milliseconds
+Transformation Complete!
+Execution Time: 385 milliseconds
+Transformation Complete!
+Execution Time: 380 milliseconds
+Transformation Complete!
+Execution Time: 386 milliseconds
+Transformation Complete!
+Execution Time: 390 milliseconds
+Transformation Complete!
+Execution Time: 388 milliseconds
+Transformation Complete!
+Execution Time: 379 milliseconds
+Transformation Complete!
+Execution Time: 396 milliseconds
+Transformation Complete!
+Execution Time: 397 milliseconds
+Transformation Complete!
+Execution Time: 398 milliseconds
+Transformation Complete!
+Execution Time: 395 milliseconds
+Transformation Complete!
+Execution Time: 396 milliseconds
+Transformation Complete!
+Execution Time: 387 milliseconds
+Transformation Complete!
+Execution Time: 400 milliseconds
+Transformation Complete!
+Execution Time: 397 milliseconds
+Transformation Complete!
+Execution Time: 400 milliseconds
+Transformation Complete!
+Execution Time: 393 milliseconds
+Transformation Complete!
+Execution Time: 403 milliseconds
+Transformation Complete!
+Execution Time: 755 milliseconds
+
+Pthread PartC (Optimized with -O2)
+Number of cores: 1
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 5864 milliseconds
+
+Number of cores: 2
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 4781 milliseconds
+
+Number of cores: 4
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 2232 milliseconds
+
+Number of cores: 8
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 1131 milliseconds
+
+Number of cores: 16
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 595 milliseconds
+
+Number of cores: 32
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-pthread.jpg
+Transformation Complete!
+Execution Time: 313 milliseconds
+
+OpenMP PartC (Optimized with -O2)
+Number of cores: 1
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 5812 milliseconds
+
+Number of cores: 2
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 4233 milliseconds
+
+Number of cores: 4
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 2211 milliseconds
+
+Number of cores: 8
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 1137 milliseconds
+
+Number of cores: 16
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 692 milliseconds
+
+Number of cores: 32
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openmp.jpg
+Transformation Complete!
+Execution Time: 351 milliseconds
+
+CUDA PartC
+Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
+GPU Execution Time: 40.0007 milliseconds
+Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-cuda.jpg
+
 OpenACC PartC
 Input file from: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../images/4K-RGB.jpg
 Output file to: /nfsmnt/119010148/CUHKSZ-CSC4005/project1/src/scripts/../../output/4K-Bilateral-openacc.jpg
 Transformation Complete!
-Execution Time: 7 milliseconds
+Execution Time: 9 milliseconds
 

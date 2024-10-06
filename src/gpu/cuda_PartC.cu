@@ -14,7 +14,6 @@
 #include <cuda_runtime.h>
 #include "../utils.hpp"
 
-// Constants for bilateral filter
 __constant__ float d_sigma_s = 15.0f;
 __constant__ float d_sigma_r = 30.0f;
 
@@ -25,9 +24,7 @@ __device__ unsigned char d_clamp_pixel_value(float pixel)
                        : static_cast<unsigned char>(pixel);
 }
 
-/**
- * Kernel function to perform bilateral filtering on an image channel
- */
+// kernel function for applying bilateral filtering on an image channel
 __global__ void bilateral_filter_kernel(const ColorValue* input_channel, ColorValue* output_channel,
                                         int width, int height) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -40,7 +37,7 @@ __global__ void bilateral_filter_kernel(const ColorValue* input_channel, ColorVa
         float norm_factor = 0.0f;
         float center_value = input_channel[idx];
 
-        // Iterate over the 3x3 kernel
+        // loop through the 3*3 kernel
         for (int ky = -1; ky <= 1; ky++) {
             for (int kx = -1; kx <= 1; kx++) {
                 int neighbor_x = x + kx;
@@ -63,11 +60,9 @@ __global__ void bilateral_filter_kernel(const ColorValue* input_channel, ColorVa
     }
 }
 
-/**
- * Helper function to launch CUDA kernel
- */
+// utility function to initiate the CUDA kernel
 void apply_bilateral_filter_cuda(const JpegSOA& input_jpeg, JpegSOA& output_jpeg, int width, int height) {
-    // Allocate memory on the GPU for input and output channels
+    // reserve memory on the gpu for the input and output channels
     ColorValue *d_r_input, *d_g_input, *d_b_input;
     ColorValue *d_r_output, *d_g_output, *d_b_output;
 
@@ -79,26 +74,26 @@ void apply_bilateral_filter_cuda(const JpegSOA& input_jpeg, JpegSOA& output_jpeg
     cudaMalloc((void**)&d_g_output, channel_size);
     cudaMalloc((void**)&d_b_output, channel_size);
 
-    // Copy input data from host to device
+    // transfer inpit data from the host to the device
     cudaMemcpy(d_r_input, input_jpeg.r_values, channel_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_g_input, input_jpeg.g_values, channel_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b_input, input_jpeg.b_values, channel_size, cudaMemcpyHostToDevice);
 
-    // Set CUDA grid and block dimensions
+    // configure the dimensions of the cuda grid and blocks
     dim3 blockDim(32, 32);
     dim3 gridDim((width + blockDim.x - 1) / blockDim.x, (height + blockDim.y - 1) / blockDim.y);
 
-    // Launch CUDA kernel for each channel (R, G, B)
+    // initiate the cuda kernel for each channel
     bilateral_filter_kernel<<<gridDim, blockDim>>>(d_r_input, d_r_output, width, height);
     bilateral_filter_kernel<<<gridDim, blockDim>>>(d_g_input, d_g_output, width, height);
     bilateral_filter_kernel<<<gridDim, blockDim>>>(d_b_input, d_b_output, width, height);
 
-    // Copy output data back to host
+    // transfer the output data back to the host
     cudaMemcpy(output_jpeg.r_values, d_r_output, channel_size, cudaMemcpyDeviceToHost);
     cudaMemcpy(output_jpeg.g_values, d_g_output, channel_size, cudaMemcpyDeviceToHost);
     cudaMemcpy(output_jpeg.b_values, d_b_output, channel_size, cudaMemcpyDeviceToHost);
 
-    // Free device memory
+    // release the memory on the device
     cudaFree(d_r_input);
     cudaFree(d_g_input);
     cudaFree(d_b_input);
@@ -113,7 +108,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Read input JPEG image in structure-of-array form
+    // load the input jpeg image in a structure-of-arrays format
     const char* input_filename = argv[1];
     const char* output_filename = argv[2];
     std::cout << "Input file from: " << input_filename << "\n";
@@ -124,7 +119,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Allocate memory for output image
+    // reserve memory for the output image
     JpegSOA output_jpeg;
     output_jpeg.width = input_jpeg.width;
     output_jpeg.height = input_jpeg.height;
@@ -134,30 +129,26 @@ int main(int argc, char** argv) {
     output_jpeg.g_values = new ColorValue[output_jpeg.width * output_jpeg.height];
     output_jpeg.b_values = new ColorValue[output_jpeg.width * output_jpeg.height];
 
-    // Start timer
     cudaEvent_t start, stop;
     float gpuDuration;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
-    cudaEventRecord(start, 0);  // GPU start time
+    cudaEventRecord(start, 0);  
 
-    // Apply bilateral filter using CUDA
+    // utilize cuda to perform bilateral filtering
     apply_bilateral_filter_cuda(input_jpeg, output_jpeg, input_jpeg.width, input_jpeg.height);
 
-    // End timer
-    cudaEventRecord(stop, 0);  // GPU end time
+    cudaEventRecord(stop, 0);  
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&gpuDuration, start, stop);
     std::cout << "GPU Execution Time: " << gpuDuration << " milliseconds" << std::endl;
 
-    // Save output JPEG image
     std::cout << "Output file to: " << output_filename << "\n";
     if (export_jpeg(output_jpeg, output_filename)) {
         std::cerr << "Failed to write output JPEG\n";
         return -1;
     }
 
-    // Cleanup
     delete[] input_jpeg.r_values;
     delete[] input_jpeg.g_values;
     delete[] input_jpeg.b_values;
@@ -165,7 +156,6 @@ int main(int argc, char** argv) {
     delete[] output_jpeg.g_values;
     delete[] output_jpeg.b_values;
 
-    // Cleanup CUDA events
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 

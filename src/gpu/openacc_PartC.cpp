@@ -24,7 +24,7 @@ ColorValue acc_clamp_pixel_value(float value)
 
 #pragma acc routine seq
 float acc_bilateral_filter(const unsigned char* image_buffer, int pixel_id, int width, int num_channels,
-                           float sigma_s, float sigma_r, int x, int y) {
+                           float sigma_s, float sigma_r, int x, int y, int channel_id) {
     int line_width = width * num_channels;
     float sum_weights = 0.0f;
     float filtered_value = 0.0f;
@@ -38,12 +38,12 @@ float acc_bilateral_filter(const unsigned char* image_buffer, int pixel_id, int 
             int neighbor_x = x + kx;
             int neighbor_y = y + ky;
 
-            // 边界处理，确保不访问越界像素
+            // boudary handling, ensure no out-of-bounds pixel access
             if (neighbor_x < 0 || neighbor_x >= width || neighbor_y < 0 || neighbor_y >= width) {
                 continue;
             }
 
-            int neighbor_id = (neighbor_y * width + neighbor_x) * num_channels;
+            int neighbor_id = (neighbor_y * width + neighbor_x) * num_channels + channel_id;
             float neighbor_value = image_buffer[neighbor_id];
 
             float spatial_dist = kx * kx + ky * ky;
@@ -59,17 +59,16 @@ float acc_bilateral_filter(const unsigned char* image_buffer, int pixel_id, int 
         }
     }
 
-    // 返回归一化的滤波结果
+    // return the normalized filtering result
     return filtered_value / sum_weights;
 }
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        std::cerr << "Invalid argument, should be: ./executable /path/to/input/jpeg /path/to/output/jpeg\n";
+      	std::cerr << "Invalid argument, should be: ./executable /path/to/input/jpeg /path/to/output/jpeg\n";
         return -1;
     }
 
-    // Read JPEG File
     const char* input_filename = argv[1];
     std::cout << "Input file from: " << input_filename << "\n";
     auto input_jpeg = read_from_jpeg(input_filename);
@@ -87,34 +86,31 @@ int main(int argc, char** argv) {
     float sigma_s = 15.0f;  // spatial
     float sigma_r = 30.0f;  // range
 
-#pragma acc enter data copyin(filteredImage[0:buffer_size], buffer[0:buffer_size])
-
+#pragma acc enter data copyin(  filteredImage[0: buffer_size],  \
+                                buffer[0: buffer_size],     \
+                                sigma_s, sigma_r)
+#pragma acc update device(  filteredImage[0: buffer_size],  \
+                            buffer[0: buffer_size])
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    // 每个颜色通道上双边滤波
-#pragma acc parallel present(filteredImage[0:buffer_size], buffer[0:buffer_size]) num_gangs(1024)
+    // apply bilateral filtering on each color channel
+#pragma acc parallel present(filteredImage[0:buffer_size], buffer[0:buffer_size], sigma_s, sigma_r) num_gangs(1024)
     {
 #pragma acc loop independent
         for (int y = 1; y < height - 1; y++) {
 #pragma acc loop independent
             for (int x = 1; x < width - 1; x++) {
-                // R滤波
                 int r_id = (y * width + x) * num_channels;
-                filteredImage[r_id] = acc_clamp_pixel_value(
-                    acc_bilateral_filter(buffer, r_id, width, num_channels, sigma_s, sigma_r, x, y)
-                );
-
-                // G滤波
                 int g_id = r_id + 1;
-                filteredImage[g_id] = acc_clamp_pixel_value(
-                    acc_bilateral_filter(buffer, g_id, width, num_channels, sigma_s, sigma_r, x, y)
-                );
-
-                // B滤波
                 int b_id = r_id + 2;
-                filteredImage[b_id] = acc_clamp_pixel_value(
-                    acc_bilateral_filter(buffer, b_id, width, num_channels, sigma_s, sigma_r, x, y)
-                );
+
+                float r = acc_bilateral_filter(buffer, r_id, width, num_channels, sigma_s, sigma_r, x, y, 0);
+                float g = acc_bilateral_filter(buffer, g_id, width, num_channels, sigma_s, sigma_r, x, y, 1);
+                float b = acc_bilateral_filter(buffer, b_id, width, num_channels, sigma_s, sigma_r, x, y, 2);
+
+                filteredImage[r_id] = acc_clamp_pixel_value(r);
+                filteredImage[g_id] = acc_clamp_pixel_value(g);
+                filteredImage[b_id] = acc_clamp_pixel_value(b);
             }
         }
     }
@@ -122,9 +118,8 @@ int main(int argc, char** argv) {
     auto end_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
-#pragma acc update self(filteredImage[0:buffer_size])
-
-#pragma acc exit data delete(buffer[0:buffer_size], filteredImage[0:buffer_size])
+#pragma acc update self(filteredImage[0: buffer_size])
+#pragma acc exit data copyout(filteredImage[0 : buffer_size])
 
     const char* output_filepath = argv[2];
     std::cout << "Output file to: " << output_filepath << "\n";
